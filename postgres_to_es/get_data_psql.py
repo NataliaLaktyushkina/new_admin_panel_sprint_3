@@ -1,5 +1,5 @@
-import logging
-
+import datetime
+from dateutil.parser import parse
 from elasticsearch import helpers
 from psycopg2.extensions import connection as _connection
 
@@ -7,7 +7,12 @@ import my_connection
 import json
 from my_connection import *
 
-BULK = 10
+from state import *
+
+BULK = 1000
+fp = JsonFileStorage(os.path.dirname(os.path.abspath(__file__)))
+state = State(fp)
+
 
 def create_tables_list():
     tables_list = list()
@@ -16,34 +21,22 @@ def create_tables_list():
     return tables_list
 
 
+def check_state():
+    current_state = state.get_state('modified')
+    if current_state is None:
+        current_state = datetime.datetime.now()
+        state.set_state('modified', current_state.isoformat())
+    return current_state
+
+
 def get_data_from_table(pg_conn:_connection, table:str):
 
     if table == 'film_work':
         try:
             with pg_conn.cursor() as p_curs:
 
-                # query_text = '''
-                #     SELECT json_agg(movies_data)
-                #         FROM
-                #         (SELECT
-                #             fw.id,
-                #             fw.title,
-                #             fw.description,
-                #             fw.rating as imdb_rating,
-                #             p.full_name as director
-                #         FROM content.film_work fw
-                #         LEFT JOIN content.person_film_work pfw ON pfw.film_work_id = fw.id
-                #         LEFT JOIN content.person p ON p.id = pfw.person_id
-                #         WHERE pfw.role = 'director'
-                #         ORDER BY fw.updated_at
-                #         LIMIT 10) movies_data;
-                #     '''
+                modified = check_state()
 
-                # json_agg(DISTINCT
-                # p.full_name
-                # )
-                # FILTER(WHERE
-                # pfw.role = 'director')
                 query_text = """
                     SELECT json_agg(movies_data)
                     FROM (
@@ -95,14 +88,13 @@ def get_data_from_table(pg_conn:_connection, table:str):
                         LEFT JOIN content.person p ON p.id = pfw.person_id
                         LEFT JOIN content.genre_film_work gfw ON gfw.film_work_id = fw.id
                         LEFT JOIN content.genre g ON g.id = gfw.genre_id
-                      
+                        WHERE fw.updated_at > %s         
                         GROUP BY fw.id
                         ORDER BY fw.updated_at
-                        
-                        ) movies_data;
-                """
+                        LIMIT %s ) 
+                    movies_data;"""
 
-                p_curs.execute(query_text)
+                p_curs.execute(query_text, (modified, BULK,))
                 data = p_curs.fetchall()
                 with open('movies.json', 'w') as movies_data:
                     json.dump(data[0][0], movies_data)
@@ -123,6 +115,7 @@ def send_data_to_es():
                     bulk_data = json.load(movies_data)
                 response = helpers.bulk(es_client, bulk_data, index=index_name)
                 logging.info(' '.join(('Bulk', str(response[0]), 'documents')))
+                state.set_state('modified', datetime.datetime.now().isoformat())
             except Exception as e:
                 logging.error(e.args[0])
 
@@ -144,7 +137,6 @@ def create_index(es_object, index_name):
 
 def load_from_psql(pg_conn: _connection):
     tables_list = create_tables_list()
-
     for table_name in tables_list:
         get_data_from_table(pg_conn, table_name)
 
