@@ -55,13 +55,3 @@ class State:
             return None
         else:
             return value
-
-
-# fp = JsonFileStorage(os.path.dirname(os.path.abspath(__file__)))
-# s = State(fp)
-# s.set_state('test1', 1)
-# s.set_state("key", 10)
-# del s
-# s = State(fp)
-# s.get_state('test1')
-# s.get_state('test3')
