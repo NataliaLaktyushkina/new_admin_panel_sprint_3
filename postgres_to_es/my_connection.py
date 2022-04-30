@@ -16,13 +16,12 @@ def get_environment_var():
                'password': os.environ.get('PASSWORD'), 'host': os.environ.get('HOST'), 'port': os.environ.get('PORT'),
                'db_path': os.environ.get('DB_PATH'),
                'elastic_pass': os.environ.get('ELASTIC_PASSWORD'),
-                }
+               }
 
     return env_var
 
 
 def connect_to_db():
-
     env_var = get_environment_var()
 
     dsl = {'dbname': env_var['db_name'],
@@ -30,8 +29,6 @@ def connect_to_db():
            'password': env_var['password'],
            'host': env_var['host'],
            'port': env_var['port']}
-
-    db_path = env_var['db_path']
 
     logging.basicConfig(filename='loading.log', filemode='w')
     logging.root.setLevel(logging.NOTSET)
