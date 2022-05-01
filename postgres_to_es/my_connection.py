@@ -13,7 +13,8 @@ from psycopg2.extras import DictCursor
 
 def backoff(start_sleep_time=0.1, factor=2, border_sleep_time=10):
     """
-    Функция для повторного выполнения функции через некоторое время, если возникла ошибка. Использует наивный экспоненциальный рост времени повтора (factor) до граничного времени ожидания (border_sleep_time)
+    Функция для повторного выполнения функции через некоторое время, если возникла ошибка.
+    Использует наивный экспоненциальный рост времени повтора (factor) до граничного времени ожидания (border_sleep_time)
 
     Формула:
         t = start_sleep_time * 2^(n) if t < border_sleep_time
@@ -31,7 +32,7 @@ def backoff(start_sleep_time=0.1, factor=2, border_sleep_time=10):
             while True:
                 try:
                     return func(*args, **kwargs)
-                except:
+                except ConnectionError:
                     if t >= border_sleep_time:
                         t = border_sleep_time
                     else:
@@ -73,6 +74,7 @@ def connect_to_db():
     pg_conn.close()
 
 
+@backoff()
 def connect_to_esl():
     elast_pass = get_environment_var()['elastic_pass']
     es = Elasticsearch("http://127.0.0.1:9200",
@@ -80,6 +82,3 @@ def connect_to_esl():
                        )
     logging.info(es.info())
     return es
-
-
-
