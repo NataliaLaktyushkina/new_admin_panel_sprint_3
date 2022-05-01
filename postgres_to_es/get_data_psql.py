@@ -1,10 +1,8 @@
 import datetime
-from dateutil.parser import parse
 from elasticsearch import helpers
 from psycopg2.extensions import connection as _connection
 
 import my_connection
-import json
 from my_connection import *
 
 from state import *
@@ -24,12 +22,12 @@ def create_tables_list():
 def check_state():
     current_state = state.get_state('modified')
     if current_state is None:
-        current_state = datetime.datetime.now()
+        current_state = datetime.datetime.min
         state.set_state('modified', current_state.isoformat())
     return current_state
 
 
-def get_data_from_table(pg_conn:_connection, table:str):
+def get_data_from_table(pg_conn: _connection, table: str):
 
     if table == 'film_work':
         try:
