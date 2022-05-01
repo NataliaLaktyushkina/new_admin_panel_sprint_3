@@ -118,7 +118,7 @@ def send_data_to_es():
                 logging.error(e.args[0])
 
 
-def create_index(es_object, index_name):
+def create_index(es_object: Elasticsearch, index_name: str):
     created = False
     with open('index_settings.json', 'r') as ind_set:
         settings = json.load(ind_set)
