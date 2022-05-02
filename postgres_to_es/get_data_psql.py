@@ -1,11 +1,15 @@
 import datetime
+import json
+import logging
+import os
+import psycopg2
+
+from elasticsearch import Elasticsearch
 from elasticsearch import helpers
 from psycopg2.extensions import connection as _connection
 
 import my_connection
-from my_connection import *
-
-from state import *
+from state import JsonFileStorage, State
 
 BULK = 1000
 fp = JsonFileStorage(os.path.dirname(os.path.abspath(__file__)))
@@ -140,4 +144,5 @@ def load_from_psql(pg_conn: _connection):
 
 
 if __name__ == '__main__':
-    connect_to_db()
+    while True:
+        my_connection.connect_to_db()
