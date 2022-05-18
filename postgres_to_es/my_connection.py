@@ -80,5 +80,4 @@ def connect_to_esl():
     es = Elasticsearch("http://127.0.0.1:9200",
                        basic_auth=("elastic", elast_pass)
                        )
-    logging.info(es.info())
     return es

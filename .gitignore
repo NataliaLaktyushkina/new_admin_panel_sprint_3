@@ -1,2 +1,5 @@
 /postgres_to_es/.env
 /postgres_to_es/data.json
+/postgres_to_es/genres.json
+/postgres_to_es/movies.json
+/postgres_to_es/persons.json
